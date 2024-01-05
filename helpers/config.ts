@@ -1,0 +1,6 @@
+export default {
+  secret_key:
+    "E285FD049A2E91EC3072DBFC69157CA5976953D8837753D0DD75F22B89EFEC81",
+  secret_iv: "B3AEC662EE753474AFDF7484005DFBCC",
+  ecnryption_method: "aes-256-cbc",
+};

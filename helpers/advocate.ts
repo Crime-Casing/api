@@ -1,5 +1,4 @@
-import { MongoClient, WithId } from "mongodb";
-import { UserReqBody } from "../handlers/user";
+import { MongoClient } from "mongodb";
 import { AdvocateReqBody } from "../handlers/advocate";
 
 export const advocateExists = async ({

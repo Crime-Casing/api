@@ -2,20 +2,25 @@ import Express from "express";
 import connect from "../database/connect";
 import { Exceptions } from "../common-types";
 import { advocateExists } from "../helpers/advocate";
+import { encryptData } from "../helpers/encryption";
 
 export type AdvocateStatus = "PENDING" | "APPROVED" | "DENIED";
 export type AdvocateWorkStatus = "ACTIVE" | "RETIRED" | "ON BREAK";
-export type AdvocateTypes = "SESSION" | "HIGH" | "SUPREME";
+export type CourtTypes = "SESSION" | "HIGH" | "SUPREME";
 
 export interface AdvocateReqBody {
   aadhar_id: number;
-  type: AdvocateTypes;
+  type: CourtTypes;
   reg_no: string;
   status: AdvocateStatus;
   work_status: AdvocateWorkStatus;
 }
 
-const types: AdvocateTypes[] = ["SESSION", "HIGH", "SUPREME"];
+// export interface AdvocateReqApproveBody {
+//   aadhar_id: number;
+// }
+
+const types: CourtTypes[] = ["SESSION", "HIGH", "SUPREME"];
 const workStatuses: AdvocateWorkStatus[] = ["ACTIVE", "RETIRED", "ON BREAK"];
 const advocateStatuses: AdvocateStatus[] = ["APPROVED", "DENIED", "PENDING"];
 
@@ -37,7 +42,7 @@ export const create_advocate = async (
   const data: AdvocateReqBody = req.body;
 
   const aadhar_id = data.aadhar_id;
-  const type: AdvocateTypes = data.type?.trim().toUpperCase() as AdvocateTypes;
+  const type: CourtTypes = data.type?.trim().toUpperCase() as CourtTypes;
   const reg_no = data.reg_no;
   const status: AdvocateStatus = data.status
     ?.trim()
@@ -47,8 +52,6 @@ export const create_advocate = async (
     .toUpperCase() as AdvocateWorkStatus;
 
   const exceptions: Exceptions[] = [];
-
-  console.log("Here 1");
 
   if (!aadhar_id) exceptions.push({ message: "Aadhar Id field is missing!" });
   else if (aadhar_id.toString().length !== 12)
@@ -71,8 +74,6 @@ export const create_advocate = async (
     return;
   }
 
-  console.log("Here 2");
-
   if (await advocateExists({ aadhar_id, client })) {
     res
       .status(400)
@@ -93,10 +94,11 @@ export const create_advocate = async (
     .collection("advocates")
     .insertOne(insertData);
   console.log(advocate);
+
   res.status(201).json({
     success: true,
     message: "Advocate created successfully!",
-    data: advocate,
+    data: {},
   });
 
   client?.close();
@@ -120,7 +122,7 @@ export const update_advocate = async (
   const data: AdvocateReqBody = req.body;
 
   const aadhar_id = data.aadhar_id;
-  const type: AdvocateTypes = data.type?.trim().toUpperCase() as AdvocateTypes;
+  const type: CourtTypes = data.type?.trim().toUpperCase() as CourtTypes;
   const reg_no = data.reg_no;
   const status: AdvocateStatus = data.status
     ?.trim()
@@ -181,7 +183,7 @@ export const update_advocate = async (
   if (!advocate) {
     res
       .status(403)
-      .json({ success: false, message: "User does not exist!", data: {} });
+      .json({ success: false, message: "Advocate does not exist!", data: {} });
     return;
   }
 
@@ -200,7 +202,48 @@ export const update_advocate = async (
 
   res.status(203).json({
     success: true,
-    message: "Updated user successfully!",
+    message: "Updated advocate successfully!",
     data: {},
+  });
+};
+
+export const approve_advocate = async (
+  req: Express.Request,
+  res: Express.Response
+) => {
+  const client = await connect();
+
+  if (!client) {
+    res.status(400).json({
+      success: false,
+      message: "Something went wrong with the data",
+      data: {},
+    });
+    return;
+  }
+
+  const advocates = await client
+    .db()
+    .collection("advocates")
+    .find({ status: "PENDING" })
+    .toArray();
+
+  if (!advocates) {
+    res.status(404).json({
+      success: false,
+      message: "Something went wrong in our end",
+      data: {},
+    });
+
+    return;
+  }
+
+  const encryptedData = encryptData(JSON.stringify(advocates));
+  console.log(encryptedData);
+
+  res.status(200).json({
+    success: true,
+    message: "Advocates needing approval extracted",
+    data: encryptedData,
   });
 };
