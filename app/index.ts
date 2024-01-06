@@ -1,10 +1,11 @@
 import Express from "express";
 
-import { signup, update_user } from "../handlers/user";
+import { show_user, signup, update_user } from "../handlers/user";
 import connect from "../database/connect";
 import {
   approve_advocate,
   create_advocate,
+  show_advocate,
   update_advocate,
 } from "../handlers/advocate";
 import { create_case, show_case, update_case } from "../handlers/case";
@@ -40,6 +41,17 @@ app.get("/api/user/update", (req, res) => {
 });
 
 app.post(
+  "/api/user/show",
+  async (req: Express.Request, res: Express.Response) => {
+    show_user(req, res);
+  }
+);
+
+app.get("/api/user/show", (req, res) => {
+  res.status(200).json({ message: "Api is up and running" });
+});
+
+app.post(
   "/api/advocate/create",
   (req: Express.Request, res: Express.Response) => {
     create_advocate(req, res);
@@ -71,6 +83,13 @@ app.get(
   "/api/advocate/update",
   (req: Express.Request, res: Express.Response) => {
     res.status(200).json({ message: "Api is up and running" });
+  }
+);
+
+app.post(
+  "/api/advocate/show",
+  (req: Express.Request, res: Express.Response) => {
+    show_advocate(req, res);
   }
 );
 
@@ -136,6 +155,10 @@ app.post(
 app.get("/api/case/show", (req: Express.Request, res: Express.Response) => {
   res.status(200).json({ message: "Api is up and running" });
 });
+
+// app.post("/api/search", (req: Express.Request, res: Express.Response) => {
+//   search(req, res);
+// });
 
 const port = 8666;
 app.listen(port, () => {

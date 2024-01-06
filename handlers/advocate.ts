@@ -247,3 +247,36 @@ export const approve_advocate = async (
     data: encryptedData,
   });
 };
+
+export const show_advocate = async (
+  req: Express.Request,
+  res: Express.Response
+) => {
+  const client = await connect();
+
+  if (!client) {
+    res.status(400).json({
+      success: false,
+      message: "Something went wrong with the data",
+      data: {},
+    });
+    return;
+  }
+
+  const data: AdvocateReqBody = req.body;
+  const aadhar_id = data.aadhar_id;
+
+  const advocate = await advocateExists({ aadhar_id, client });
+  if (!advocate) {
+    res.json({ success: false, message: "Advocate not found", data: {} });
+    return;
+  }
+
+  const encryptedAdvocate = encryptData(JSON.stringify(advocate));
+
+  res.json({
+    success: true,
+    message: "Advocate Extracted",
+    data: encryptedAdvocate,
+  });
+};

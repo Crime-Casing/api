@@ -215,6 +215,7 @@ export const show_case = async (
   }
 
   const { case_no }: CaseReqShowBody = req.body;
+  console.log(req.body);
   const caseData: CaseReqBody = await caseExists({ case_no, client });
 
   const exceptions: Exceptions[] = [];

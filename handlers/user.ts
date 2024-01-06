@@ -3,6 +3,7 @@ import { Exceptions } from "../common-types";
 import { userExists } from "../helpers/user";
 import connect from "../database/connect";
 import { validate } from "email-validator";
+import { encryptData } from "../helpers/encryption";
 
 export interface UserReqBody {
   name: string;
@@ -20,6 +21,10 @@ export interface AddressReqBody {
   line_1: string;
   line_2: string;
   state: string;
+}
+
+export interface UserReqShow {
+  aadhar_id: number;
 }
 
 export const signup = async (req: Express.Request, res: Express.Response) => {
@@ -81,13 +86,11 @@ export const signup = async (req: Express.Request, res: Express.Response) => {
   }
 
   if (await userExists({ aadhar_id: data.aadhar_id, client })) {
-    res
-      .status(200)
-      .json({
-        success: true,
-        message: "User already exists! Logging in",
-        data,
-      });
+    res.status(200).json({
+      success: true,
+      message: "User already exists! Logging in",
+      data,
+    });
     return;
   }
 
@@ -221,4 +224,53 @@ export const update_user = async (
     message: "Updated user successfully!",
     data: {},
   });
+};
+
+export const show_user = async (
+  req: Express.Request,
+  res: Express.Response
+) => {
+  const client = await connect();
+
+  if (!client) {
+    res.status(400).json({
+      success: false,
+      message: "Something went wrong with the data",
+      data: {},
+    });
+    return;
+  }
+
+  const { aadhar_id }: UserReqShow = req.body;
+  const exceptions: Exceptions[] = [];
+
+  if (!aadhar_id) exceptions.push({ message: "Aadhar Id field is missing!" });
+  else if (aadhar_id.toString().length !== 12)
+    exceptions.push({
+      message: "Aadhar Id field length should be exactly 12",
+    });
+
+  if (exceptions.length > 0) {
+    res.status(403).json({
+      sucess: false,
+      message: "Missing fields in the data",
+      data: exceptions,
+    });
+    return;
+  }
+
+  const user: UserReqBody = await userExists({ aadhar_id, client });
+
+  if (!user) {
+    res
+      .status(403)
+      .json({ success: false, message: "User does not exist!", data: {} });
+    return;
+  }
+
+  const encryptedUser = encryptData(JSON.stringify(user));
+
+  res
+    .status(200)
+    .json({ success: false, message: "User extracted", data: encryptedUser });
 };
